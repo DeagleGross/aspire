@@ -1,0 +1,72 @@
+@description('The location for the resource(s) to be deployed.')
+param location string = resourceGroup().location
+
+param env_outputs_azure_container_apps_environment_default_domain string
+
+param env_outputs_azure_container_apps_environment_id string
+
+param orders_api_containerimage string
+
+param orders_api_containerport string
+
+param env_outputs_azure_container_registry_endpoint string
+
+param env_outputs_azure_container_registry_managed_identity_id string
+
+resource orders_api 'Microsoft.App/containerApps@2025-10-02-preview' = {
+  name: 'orders-api'
+  location: location
+  properties: {
+    configuration: {
+      activeRevisionsMode: 'Single'
+      ingress: {
+        external: true
+        targetPort: int(orders_api_containerport)
+        transport: 'http'
+      }
+      registries: [
+        {
+          server: env_outputs_azure_container_registry_endpoint
+          identity: env_outputs_azure_container_registry_managed_identity_id
+        }
+      ]
+      runtime: {
+        dotnet: {
+          autoConfigureDataProtection: true
+        }
+      }
+    }
+    environmentId: env_outputs_azure_container_apps_environment_id
+    template: {
+      containers: [
+        {
+          image: orders_api_containerimage
+          name: 'orders-api'
+          env: [
+            {
+              name: 'OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY'
+              value: 'in_memory'
+            }
+            {
+              name: 'ASPNETCORE_FORWARDEDHEADERS_ENABLED'
+              value: 'true'
+            }
+            {
+              name: 'HTTP_PORTS'
+              value: orders_api_containerport
+            }
+          ]
+        }
+      ]
+      scale: {
+        minReplicas: 1
+      }
+    }
+  }
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${env_outputs_azure_container_registry_managed_identity_id}': { }
+    }
+  }
+}

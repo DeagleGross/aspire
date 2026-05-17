@@ -87,6 +87,7 @@
     <Project Path="src/Aspire.Hosting.Azure.AppConfiguration/Aspire.Hosting.Azure.AppConfiguration.csproj" />
     <Project Path="src/Aspire.Hosting.Azure.AppContainers/Aspire.Hosting.Azure.AppContainers.csproj" />
     <Project Path="src/Aspire.Hosting.Azure.ApplicationInsights/Aspire.Hosting.Azure.ApplicationInsights.csproj" />
+    <Project Path="src/Aspire.Hosting.Azure.ApiManagement/Aspire.Hosting.Azure.ApiManagement.csproj" />
     <Project Path="src/Aspire.Hosting.Azure.AppService/Aspire.Hosting.Azure.AppService.csproj" />
     <Project Path="src/Aspire.Hosting.Azure.CognitiveServices/Aspire.Hosting.Azure.CognitiveServices.csproj" />
     <Project Path="src/Aspire.Hosting.Azure.ContainerRegistry/Aspire.Hosting.Azure.ContainerRegistry.csproj" />
@@ -128,6 +129,10 @@
   <Folder Name="/playground/AzureAppConfiguration/">
     <Project Path="playground/AzureAppConfiguration/AzureAppConfiguration.AppHost/AzureAppConfiguration.AppHost.csproj" Id="e404ee0a-0d56-4db9-9119-c0d5989f3c85" />
     <Project Path="playground/AzureAppConfiguration/AzureAppConfiguration.Web/AzureAppConfiguration.Web.csproj" Id="2a9eb860-d873-4a00-be81-c05d5dc1d30c" />
+  </Folder>
+  <Folder Name="/playground/AzureApiManagement/">
+    <Project Path="playground/AzureApiManagement/AzureApiManagement.ApiService/AzureApiManagement.ApiService.csproj" />
+    <Project Path="playground/AzureApiManagement/AzureApiManagement.AppHost/AzureApiManagement.AppHost.csproj" />
   </Folder>
   <Folder Name="/playground/AzureAppService/">
     <Project Path="playground/AzureAppService/AzureAppService.ApiService/AzureAppService.ApiService.csproj" />
