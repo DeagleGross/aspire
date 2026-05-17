@@ -2,8 +2,10 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 #pragma warning disable ASPIRECOMPUTE002
+#pragma warning disable AZPROVISION001
 
 using Aspire.Hosting.Utils;
+using Azure.Provisioning.ApiManagement;
 using static Aspire.Hosting.Utils.AzureManifestUtils;
 
 namespace Aspire.Hosting.Azure.Tests;
@@ -224,6 +226,59 @@ public class AzureApiManagementTests
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => ExecuteBeforeStartHooksAsync(app, default));
         Assert.Contains("does not have an external HTTP or HTTPS endpoint", exception.ToString());
+    }
+
+    [Fact]
+    public void WithSkuAddsAnnotation()
+    {
+        var builder = TestDistributedApplicationBuilder.Create(DistributedApplicationOperation.Publish);
+
+        var apim = builder.AddAzureApiManagement("apim")
+            .WithSku(ApiManagementServiceSkuType.BasicV2, capacity: 2);
+
+        var ann = apim.Resource.Annotations.OfType<AzureApiManagementSkuAnnotation>().Single();
+        Assert.Equal(ApiManagementServiceSkuType.BasicV2, ann.Sku);
+        Assert.Equal(2, ann.Capacity);
+    }
+
+    [Fact]
+    public void WithSkuReplacesPreviousValue()
+    {
+        var builder = TestDistributedApplicationBuilder.Create(DistributedApplicationOperation.Publish);
+
+        var apim = builder.AddAzureApiManagement("apim")
+            .WithSku(ApiManagementServiceSkuType.Developer)
+            .WithSku(ApiManagementServiceSkuType.Premium, capacity: 3);
+
+        var ann = apim.Resource.Annotations.OfType<AzureApiManagementSkuAnnotation>().Single();
+        Assert.Equal(ApiManagementServiceSkuType.Premium, ann.Sku);
+        Assert.Equal(3, ann.Capacity);
+    }
+
+    [Fact]
+    public void WithSkuThrowsOnInvalidCapacity()
+    {
+        var builder = TestDistributedApplicationBuilder.Create(DistributedApplicationOperation.Publish);
+        var apim = builder.AddAzureApiManagement("apim");
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => apim.WithSku(ApiManagementServiceSkuType.Premium, capacity: 0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => apim.WithSku(ApiManagementServiceSkuType.Premium, capacity: -1));
+    }
+
+    [Fact]
+    public async Task WithSkuGeneratesBicepWithCustomSku()
+    {
+        var builder = TestDistributedApplicationBuilder.Create(DistributedApplicationOperation.Publish);
+
+        var apim = builder.AddAzureApiManagement("apim")
+            .WithSku(ApiManagementServiceSkuType.Developer);
+
+        using var app = builder.Build();
+        await ExecuteBeforeStartHooksAsync(app, default);
+
+        var (_, bicep) = await GetManifestWithBicep(apim.Resource);
+
+        await Verify(bicep, "bicep");
     }
 
     [Fact]

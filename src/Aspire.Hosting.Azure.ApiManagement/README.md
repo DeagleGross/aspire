@@ -40,7 +40,23 @@ This provisions an Azure API Management service, registers an API named `orders`
 
 ## SKU choice
 
-By default the integration provisions API Management with the `StandardV2` SKU. StandardV2 typically provisions in under a minute and is suitable for production workloads. Override the SKU (or any other service property) using `ConfigureInfrastructure`:
+By default the integration provisions API Management with the `StandardV2` SKU and capacity 1. StandardV2 typically provisions in under a minute and is suitable for production workloads. Use the `WithSku` extension to pick a different SKU:
+
+```csharp
+using Azure.Provisioning.ApiManagement;
+
+var apim = builder.AddAzureApiManagement("apim")
+    .WithSku(ApiManagementServiceSkuType.BasicV2);
+
+// Or with explicit capacity (Premium / PremiumV2 support >1 for HA):
+var apim = builder.AddAzureApiManagement("apim")
+    .WithSku(ApiManagementServiceSkuType.Premium, capacity: 2);
+```
+
+SKU choice has significant cost, provisioning-time, and feature implications (VNet support, self-hosted gateway, multi-region, capacity limits, etc.).
+See the [Feature-based comparison of the Azure API Management tiers](https://learn.microsoft.com/azure/api-management/api-management-features) for details before picking one.
+
+If you need to tweak service properties that aren't surfaced via a dedicated extension, fall back to `ConfigureInfrastructure`:
 
 ```csharp
 using Azure.Provisioning.ApiManagement;
@@ -49,11 +65,7 @@ var apim = builder.AddAzureApiManagement("apim")
     .ConfigureInfrastructure(infra =>
     {
         var service = infra.GetProvisionableResources().OfType<ApiManagementService>().Single();
-        service.Sku = new ApiManagementServiceSkuProperties
-        {
-            Name = ApiManagementServiceSkuType.BasicV2,
-            Capacity = 1
-        };
+        // Customize any property on the underlying CDK type.
     });
 ```
 

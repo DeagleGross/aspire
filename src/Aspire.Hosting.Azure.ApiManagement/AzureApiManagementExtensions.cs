@@ -74,12 +74,16 @@ public static class AzureApiManagementExtensions
             };
             infrastructure.Add(publisherNameParam);
 
+            var skuAnnotation = azureResource.Annotations.OfType<AzureApiManagementSkuAnnotation>().LastOrDefault();
+            var sku = skuAnnotation?.Sku ?? ApiManagementServiceSkuType.StandardV2;
+            var capacity = skuAnnotation?.Capacity ?? 1;
+
             var service = new ApiManagementService(azureResource.GetBicepIdentifier())
             {
                 Sku = new ApiManagementServiceSkuProperties
                 {
-                    Name = ApiManagementServiceSkuType.StandardV2,
-                    Capacity = 1
+                    Name = sku,
+                    Capacity = capacity
                 },
                 PublisherEmail = publisherEmailParam,
                 PublisherName = publisherNameParam,
@@ -209,6 +213,45 @@ public static class AzureApiManagementExtensions
         return builder.ExecutionContext.IsPublishMode
             ? builder.AddResource(resource)
             : builder.CreateResourceBuilder(resource);
+    }
+
+    /// <summary>
+    /// Sets the SKU and capacity of the Azure API Management service. When not called, the integration
+    /// defaults to <see cref="ApiManagementServiceSkuType.StandardV2"/> with capacity 1.
+    /// </summary>
+    /// <param name="builder">The Azure API Management resource builder.</param>
+    /// <param name="sku">The APIM SKU.</param>
+    /// <param name="capacity">The number of deployed units. Most SKUs require 1; Premium / PremiumV2 support more for HA.</param>
+    /// <returns>The same builder, for chaining.</returns>
+    /// <remarks>
+    /// <para>
+    /// SKU choice has significant cost, provisioning-time, and feature implications. See the
+    /// <see href="https://learn.microsoft.com/azure/api-management/api-management-features">feature comparison of API Management tiers</see>
+    /// for details.
+    /// </para>
+    /// <example>
+    /// <code lang="C#">
+    /// using Azure.Provisioning.ApiManagement;
+    ///
+    /// var apim = builder.AddAzureApiManagement("apim")
+    ///     .WithSku(ApiManagementServiceSkuType.BasicV2);
+    /// </code>
+    /// </example>
+    /// </remarks>
+    [AspireExportIgnore(Reason = "Takes Azure.Provisioning.ApiManagement enum which is not ATS-compatible. A polyglot string-based overload may be added later.")]
+    public static IResourceBuilder<AzureApiManagementResource> WithSku(
+        this IResourceBuilder<AzureApiManagementResource> builder,
+        ApiManagementServiceSkuType sku,
+        int capacity = 1)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        if (capacity <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(capacity), capacity, "Capacity must be greater than zero.");
+        }
+
+        return builder.WithAnnotation(new AzureApiManagementSkuAnnotation(sku, capacity), ResourceAnnotationMutationBehavior.Replace);
     }
 
     /// <summary>
